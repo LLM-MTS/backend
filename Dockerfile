@@ -1,17 +1,18 @@
-# Standard image includes required build tools
-FROM python:3.12
+FROM python:3.10-slim
 
-WORKDIR /app
+# set your working directory to where main.py actually is
+WORKDIR /app/backend
 
-# Copy only requirements first
-COPY ./requirements.txt /app/requirements.txt
+# copy only the backend requirements & install
+COPY backend/requirements.txt .
+RUN pip install --upgrade pip \
+ && pip install --no-cache-dir -r requirements.txt
 
-# RUN pip install --upgrade pip && \
-#     pip install --no-cache-dir -r /app/requirements.txt
-RUN pip install --upgrade pip --default-timeout=100 && \
-    pip install --no-cache-dir --default-timeout=100 -r /app/requirements.txt
+# copy the backend code into /app/backend
+COPY backend .
 
-COPY ./src /app
+ENV PYTHONUNBUFFERED=1
 
-# Start the app
-CMD ["python", "main.py"]
+# point uvicorn at the FastAPI instance in main.py (often named "app")
+# make sure your main.py does: app = FastAPI()
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

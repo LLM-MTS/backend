@@ -1,5 +1,5 @@
 from crewai import Crew
-from agents import (
+from src.agents import (
     emotion_task,
     intent_task,
     knowledge_task,
@@ -7,7 +7,7 @@ from agents import (
     suggest_task,
     summary_task,
 )
-from agents import (
+from src.agents import (
     emotion_agent,
     intent_agent,
     knowledge_agent,
@@ -37,36 +37,43 @@ crew = Crew(
 )
 
 
+def safe_get(task_output, key, default=None):
+    return (
+        task_output.json_dict.get(key, default)
+        if task_output and task_output.json_dict
+        else default
+    )
+
+
 def get_response(user_msg: str) -> dict:
     crew_output = crew.kickoff({"input": user_msg})
     tasks = crew_output.tasks_output
     d = {
-        "intent": tasks[0].json_dict.get("intent", "unknown"),
-        "emotion": tasks[1].json_dict.get("emotion", "neutral"),
-        "knowledge": tasks[2].json_dict.get("answer", ""),
-        "suggestion": tasks[3].json_dict.get(
-            "answer", ""
-        ),  # Обратите внимание на "answer" вместо "suggestion"
+        "intent": safe_get(tasks[0], "intent", "unknown"),
+        "emotion": safe_get(tasks[1], "emotion", "neutral"),
+        "knowledge": safe_get(tasks[2], "answer", ""),
+        "suggestion": safe_get(tasks[3], "answer", ""),
         "quality": {
-            "politeness": tasks[4].json_dict.get("politeness"),
-            "script_match": tasks[4].json_dict.get("script_match"),
-            "correctness": tasks[4].json_dict.get("correctness"),
-            "comment": tasks[4].json_dict.get("comment", ""),
+            "politeness": safe_get(tasks[4], "politeness"),
+            "script_match": safe_get(tasks[4], "script_match"),
+            "correctness": safe_get(tasks[4], "correctness"),
+            "comment": safe_get(tasks[4], "comment", ""),
         },
-        "summary": tasks[5].json_dict.get("summary", ""),
+        "summary": safe_get(tasks[5], "summary", ""),
         "crm_template": {
-            "issue_type": tasks[0].json_dict.get("intent", "other"),
-            "client_sentiment": tasks[1].json_dict.get("emotion", "neutral"),
+            "issue_type": safe_get(tasks[0], "intent", "other"),
+            "client_sentiment": safe_get(tasks[1], "emotion", "neutral"),
             "resolution": (
                 "compensation"
-                if "компенсац" in str(tasks[2].json_dict.get("answer", "")).lower()
+                if "компенсац" in str(safe_get(tasks[2], "answer", "")).lower()
                 else (
                     "escalation"
-                    if "передан" in str(tasks[2].json_dict.get("answer", "")).lower()
+                    if "передан" in str(safe_get(tasks[2], "answer", "")).lower()
                     else "info_provided"
                 )
             ),
         },
     }
+
     print(d)
     return d

@@ -8,65 +8,11 @@ from crewai import LLM
 load_dotenv()
 
 
-class HuggingFaceLLM(LLM):
-    """
-    Обёртка для HF‑pipeline, чтобы её можно было подставить вместо crewai.LLM.
-    """
-    def __init__(
-        self,
-        model_name: str,
-        return_all_scores: bool = False,
-        **pipe_kwargs
-    ):
-        # Чтобы CrewiAI не ругался на отсутствие стандартных полей:
-        self.model = model_name
-        self.api_key = None
-        self.base_url = None
-        self.temperature = pipe_kwargs.get("temperature", 0.0)
-        self.response_format = None       
-        self.response_schema = None       
-        self.stop_sequences = None  
-        self.is_anthropic = False      # <— добавили
-        self.is_openai = False         # <— на всякий случай
-        self.is_google = False          
-
-        pipe_kwargs.pop("return_all_scores", None)
-
-        self.nlp = pipeline(
-            "text-classification",
-            model=model_name,
-            return_all_scores=return_all_scores,
-            **pipe_kwargs
-        )
-
-
-    def complete(self, prompt: str, **kwargs) -> str:
-        """
-        Метод, который Crew AI вызывает под капотом.
-        Мы используем pipeline для классификации и возвращаем
-        JSON-строку с лейблом.
-        """
-        # запускаем классификацию
-        out = self.nlp(prompt)[0]   # {'label': 'joy', 'score': 0.98}
-        label = out["label"].lower()
-
-        # маппинг названий HF-модели на наши категории
-        mapping = {
-            "joy": "happy",
-            "love": "happy",
-            "anger": "anger",
-            "sadness": "sadness",
-            "fear": "fear",
-            "surprise": "excitement",
-            # потом добавить
-        }
-        emotion = mapping.get(label, "neutral")
-
-        return f'{{"emotion":"{emotion}"}}'
-
-llm = HuggingFaceLLM(
-    model_name="j-hartmann/emotion-english-distilroberta-base",
-    return_all_scores=False  # необязательно, но чтобы быстрее отдавать только топ‑класс
+llm = LLM(
+    model="groq/llama3-70b-8192",
+    api_key=os.getenv("GROQ_TOKEN"),
+    api_base="https://api.groq.com/openai/v1",
+    temperature=0.7,
 )
 
 emotion_examples = {
@@ -291,7 +237,6 @@ emotion_examples = {
         "Это победа!",
     ],
 }
-
 
 
 class EmotionResponse(BaseModel):

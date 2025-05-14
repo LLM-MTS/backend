@@ -6,10 +6,10 @@ from pydantic import BaseModel, Field
 load_dotenv()
 
 llm = LLM(
-    model="openai/mws-gpt-alpha",
-    api_key=os.getenv("MWS_API_KEY"),
-    base_url=os.getenv("MWS_BASE_URL"),
-    temperature=0.2,
+    model="groq/llama3-70b-8192",
+    api_key=os.getenv("GROQ_TOKEN"),
+    api_base="https://api.groq.com/openai/v1",
+    temperature=0.7,
 )
 intent_examples = {
     "complaint": [
